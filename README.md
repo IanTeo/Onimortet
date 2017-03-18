@@ -11,6 +11,28 @@ There are 4 heuristics:
 1. `Bumpiness` is the difference in height between all adjacent columns
 
 #### Implementation
-The current implementation is a naive brute force algorithm (Greedy)
+**Naive brute force algorithm (Greedy)** 
 
 * Max lines cleared: 634
+* Logging is available for debugging purposes
+* Weights (a,b,c,d) are taken from the Internet
+
+**Local Search**
+
+* Not implemented (Shi Ya)
+
+**Minimax**
+
+* Not implemented
+
+**Particle Swarm Optimization**
+
+* Not implemented
+
+**Genetic Algorithm**
+
+* Not implemented
+
+**Temporal Difference**
+
+* Not implemented

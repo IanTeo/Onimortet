@@ -36,6 +36,7 @@ public class PlayerSkeleton {
 	    double f = a * aggregateHeight + b * completeLines + c * holes + d * bumpiness;
 	    System.out.println(move[0] + "," + move[1] + ": "
 	            + (a*aggregateHeight) + " + " + (b*completeLines) + " + " + (c*holes) + " + " + (d*bumpiness) + " = " + f);
+	    print(field);
 	    return f;
 	}
 	
@@ -72,6 +73,7 @@ public class PlayerSkeleton {
 	public double getAggregateHeight(int[] top) {
 	    double sum = 0;
 	    for (int i = 0; i < top.length; i++) {
+	        if (top[i] == State.ROWS) return 1000;
 	        sum += top[i];
 	    }
 	    return sum;
