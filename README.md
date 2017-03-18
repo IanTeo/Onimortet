@@ -12,4 +12,5 @@ There are 4 heuristics:
 
 #### Implementation
 The current implementation is a naive brute force algorithm (Greedy)
-Max lines cleared: 634
+
+* Max lines cleared: 634
