@@ -13,7 +13,7 @@ There are 4 heuristics:
 #### Implementation
 **Naive brute force algorithm (Greedy)** 
 
-* Max lines cleared: 634
+* Max lines cleared: 4359
 * Logging is available for debugging purposes
 * Weights (a,b,c,d) are taken from the Internet
 
