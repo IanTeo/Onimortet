@@ -24,18 +24,19 @@ public class PlayerSkeleton {
 	    //heuristics
 	    double aggregateHeight = getAggregateHeight(top); //average of all heights
 	    double completeLines = getCompleteLines(field); //number of lines completed
-	    double holes = getHoles(field); //number of holes present
+	    double holes = getHoles(field, top); //number of holes present
 	    double bumpiness = getBumpiness(top); //sum of difference in height
 	    
-	    double a = -0.51;
-	    double b = 0.76;
-	    double c = -0.36;
-	    double d = -0.18;
+        double a = -0.510066;
+        double b = 0.760666;
+        double c = -0.35663;
+        double d = -0.184483;
 	    
 	    //TODO make it a linear combination
 	    double f = a * aggregateHeight + b * completeLines + c * holes + d * bumpiness;
 	    System.out.println(move[0] + "," + move[1] + ": "
 	            + (a*aggregateHeight) + " + " + (b*completeLines) + " + " + (c*holes) + " + " + (d*bumpiness) + " = " + f);
+	    print(top);
 	    print(field);
 	    return f;
 	}
@@ -73,7 +74,7 @@ public class PlayerSkeleton {
 	public double getAggregateHeight(int[] top) {
 	    double sum = 0;
 	    for (int i = 0; i < top.length; i++) {
-	        if (top[i] == State.ROWS) return 1000;
+	        if (top[i] >= State.ROWS) return 1000;
 	        sum += top[i];
 	    }
 	    return sum;
@@ -93,11 +94,18 @@ public class PlayerSkeleton {
         return sum;
 	}
 	
-	public double getHoles(int[][] field) {
+	public double getHoles(int[][] field, int[] top) {
+	    int max = top[0];
+	    for (int i = 1; i < top.length; i++) {
+	        max = Math.max(max, top[i]);
+	    }
+	    if (max >= State.ROWS) max = State.ROWS-1;
+	    
 	    int sum = 0;
-	    for (int i = 0; i < field.length-1; i++) {
+	    //last row cannot have holes
+	    for (int i = 0; i < max-1; i++) {
 	        for (int j = 0; j < field[i].length; j++) {
-	            if (field[i][j] == 0 && field[i+1][j] != 0)
+	            if (field[i][j] == 0 && i < top[j])
 	                sum++;
 	        }
 	    }
@@ -136,11 +144,19 @@ public class PlayerSkeleton {
     public void print(int[][] toPrint) {
         for (int i = 0; i < toPrint.length; i++) {
             for (int j = 0; j < toPrint[i].length; j++) {
-                System.out.print(toPrint[i][j] + " ");
+                if(toPrint[i][j] > 0) System.out.print("1 ");
+                else System.out.print("0 ");
             }
             System.out.println();
         }
         System.out.println("========================");
+    }
+    
+    public void print(int[] toPrint) {
+        for (int i = 0; i < toPrint.length; i++) {
+            System.out.print(toPrint[i] + " ");
+        }
+        System.out.println();
     }
 	
 	public static void main(String[] args) {
