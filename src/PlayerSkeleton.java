@@ -3,10 +3,10 @@ public class PlayerSkeleton {
 	//implement this function to have a working system
 	public int[] pickMove(State s, int[][] legalMoves) {
 	    //System.out.println("==== Choosing Best Move for Piece " + s.getNextPiece() + " ====");
-	    double best = f(s, legalMoves[0]);
+	    double best = findBest(s, legalMoves[0]);
 	    int[] bestMove = legalMoves[0];
 	    for (int i = 1; i < legalMoves.length; i++) {
-	        double next = f(s, legalMoves[i]);
+	        double next = findBest(s, legalMoves[i]);
 	        //we want to maximize f().
 	        if (best < next) {
 	            best = next;
@@ -17,9 +17,34 @@ public class PlayerSkeleton {
 	    return bestMove;
 	}
 	
-	public double f(State s, int[] move) {
+	public double findBest(State s, int[] move) {
 	    int[][] field = copy(s.getField());
-	    int[] top = simulateField(s, field, move[0], move[1]);
+	    int[] top = simulateField(s, field, move[0], move[1], s.getTop(), s.getNextPiece());
+	    
+	    double sum = 0;
+	    //double current = f(s, move, s.getNextPiece());
+	    for (int i = 0; i < State.N_PIECES; i++) {
+	        int[][] legalMoves = State.legalMoves[i];
+	        double best = f(s, legalMoves[0], field, top, i);
+	        for (int j = 1; j < legalMoves.length; j++) {
+	            double next = f(s, legalMoves[j], field, top, i);
+	            
+	            if (best < next) {
+	                best = next;
+	            }
+	        }
+	        sum += best;
+	    }
+	    return sum;
+	}
+	
+	public double f(State s, int[] move, int nextPiece) {
+	    return f(s, move, s.getField(), s.getTop(), nextPiece);
+	}
+	
+	public double f(State s, int[] move, int[][] theField, int[] oldTop, int nextPiece) {
+	    int[][] field = copy(theField);
+	    int[] top = simulateField(s, field, move[0], move[1], oldTop, nextPiece);
 	    
 	    //heuristics
 	    double aggregateHeight = getAggregateHeight(top); //average of all heights
@@ -39,9 +64,8 @@ public class PlayerSkeleton {
 	    return f;
 	}
 	
-	public int[] simulateField(State s, int[][] field, int orient, int slot) {
-	    int[] top = copy(s.getTop());
-	    int nextPiece = s.getNextPiece();
+	public int[] simulateField(State s, int[][] field, int orient, int slot, int[] oldTop, int nextPiece) {
+	    int[] top = copy(oldTop);
 	    
 	    //height if the first column makes contact
         int height = top[slot]-State.getpBottom()[nextPiece][orient][0];
