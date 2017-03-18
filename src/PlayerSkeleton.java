@@ -2,7 +2,7 @@ public class PlayerSkeleton {
 
 	//implement this function to have a working system
 	public int[] pickMove(State s, int[][] legalMoves) {
-	    System.out.println("==== Choosing Best Move for Piece " + s.getNextPiece() + " ====");
+	    //System.out.println("==== Choosing Best Move for Piece " + s.getNextPiece() + " ====");
 	    double best = f(s, legalMoves[0]);
 	    int[] bestMove = legalMoves[0];
 	    for (int i = 1; i < legalMoves.length; i++) {
@@ -13,7 +13,7 @@ public class PlayerSkeleton {
 	            bestMove = legalMoves[i];
 	        }
 	    }
-	    System.out.println("==== Best Move Found: " + bestMove[0] + "," + bestMove[1] + " ====");
+	    //System.out.println("==== Best Move Found: " + bestMove[0] + "," + bestMove[1] + " ====");
 	    return bestMove;
 	}
 	
@@ -34,10 +34,8 @@ public class PlayerSkeleton {
 	    
 	    //TODO make it a linear combination
 	    double f = a * aggregateHeight + b * completeLines + c * holes + d * bumpiness;
-	    System.out.println(move[0] + "," + move[1] + ": "
-	            + (a*aggregateHeight) + " + " + (b*completeLines) + " + " + (c*holes) + " + " + (d*bumpiness) + " = " + f);
-	    print(top);
-	    print(field);
+	    //System.out.println(move[0] + "," + move[1] + ": "
+	    //        + (a*aggregateHeight) + " + " + (b*completeLines) + " + " + (c*holes) + " + " + (d*bumpiness) + " = " + f);
 	    return f;
 	}
 	
