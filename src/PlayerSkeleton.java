@@ -1,20 +1,97 @@
+import java.util.*;
 public class PlayerSkeleton {
+    
+    //key is top[] values concat into a String with nextPiece as the last character
+    //value is the reward
+    HashMap<String, Double[]> rewardMap = new HashMap<String, Double[]>();
+    Stack<Tuple> backtrack = new Stack<Tuple>();
+    double reward = 0;
 
 	//implement this function to have a working system
 	public int[] pickMove(State s, int[][] legalMoves) {
-	    //System.out.println("==== Choosing Best Move for Piece " + s.getNextPiece() + " ====");
-	    double best = f(s, legalMoves[0]);
-	    int[] bestMove = legalMoves[0];
-	    for (int i = 1; i < legalMoves.length; i++) {
-	        double next = f(s, legalMoves[i]);
-	        //we want to maximize f().
-	        if (best < next) {
-	            best = next;
-	            bestMove = legalMoves[i];
+	   int[] top = s.getTop();
+	        
+	    int max = top[0];
+	    for (int i = 1; i < top.length; i++) {
+	        max = Math.max(max, top[i]);
+	    }
+	    
+	    int front = max - 6; //find lowest the frontier
+        
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < top.length; i++) {
+            int next = top[i] - front;
+            if (next <= 0) next = 1;
+            sb.append(next-1); //ensure everything is 0-based
+        }
+        sb.append(s.getNextPiece());
+	        
+	    String key = sb.toString();
+	    Double[] r = rewardMap.get(key);
+	    int[] moveToMake;
+	    if (r == null) {
+	        moveToMake = bestMove(s, legalMoves);
+	        //System.out.println("Making the greedy move");
+	    } else {
+	        System.out.println("Making my optimal move");
+	        moveToMake = new int[2];
+	        moveToMake[0] = r[0].intValue();
+	        moveToMake[1] = r[1].intValue();
+	    }
+	    
+	    int[][] field = copy(s.getField());
+        simulateField(s, field, moveToMake[0], moveToMake[1]);
+        int completeLines = (int) getCompleteLines(field);
+        backtrack.push(new Tuple(key, moveToMake));
+        
+	    calculatePayoff(completeLines);
+	    
+	    reward -= 0.1;
+	    
+	    return moveToMake;
+	   
+	}
+	
+	public void calculatePayoff(double payoff) {
+	    if (payoff > 0) {
+	        //System.out.println("Payday!");
+	        while (!backtrack.isEmpty()) {
+    	        Tuple t = backtrack.pop();
+    	        Double[] r = rewardMap.get(t.key);
+                Double[] v = { (double) t.move[0], (double) t.move[1], payoff };
+    	        if (r == null) {
+    	            rewardMap.put(t.key, v);
+    	        } else {
+    	            //if current reward is smaller than new payoff
+    	            if (r[2] < payoff) {
+    	                rewardMap.put(t.key, v);
+    	            }
+    	            
+                    //reinforce that this is a good state
+                    if (r[0] == v[0] && r[1] ==  v[1]) {
+                        r[2] *= 1.1;
+                    }
+    	        }
+    	        //System.out.println(t.key + " got paid: " + payoff);
+    	        payoff *= 0.9; //reduce payoff as we backtrack
 	        }
 	    }
-	    //System.out.println("==== Best Move Found: " + bestMove[0] + "," + bestMove[1] + " ====");
-	    return bestMove;
+	}
+	
+	public int[] bestMove(State s, int[][] legalMoves) {
+	    //System.out.println("==== Choosing Best Move for Piece " + s.getNextPiece() + " ====");
+        double best = f(s, legalMoves[0]);
+        int[] bestMove = legalMoves[0];
+        for (int i = 1; i < legalMoves.length; i++) {
+            double next = f(s, legalMoves[i]);
+            //we want to maximize f().
+            if (best < next) {
+                best = next;
+                bestMove = legalMoves[i];
+            }
+        }
+        //System.out.println("==== Best Move Found: " + bestMove[0] + "," + bestMove[1] + " ====");
+        return bestMove;
 	}
 	
 	public double f(State s, int[] move) {
@@ -163,10 +240,11 @@ public class PlayerSkeleton {
 		PlayerSkeleton p = new PlayerSkeleton();
 		while(!s.hasLost()) {
 			s.makeMove(p.pickMove(s,s.legalMoves()));
-			s.draw();
+			//s.makeMove(p.bestMove(s, s.legalMoves()));
+		    s.draw();
 			s.drawNext(0,0);
 			try {
-				Thread.sleep(300);
+				Thread.sleep(0);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
@@ -174,4 +252,14 @@ public class PlayerSkeleton {
 		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
 	}
 	
+}
+
+class Tuple {
+    protected String key;
+    protected int[] move;
+    
+    public Tuple (String key, int[] move) {
+        this.key = key;
+        this.move = move;
+    }
 }
