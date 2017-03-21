@@ -16,7 +16,7 @@ public class PlayerSkeleton {
 	        max = Math.max(max, top[i]);
 	    }
 	    
-	    int front = max - 6; //find lowest the frontier
+	    int front = max - 9; //find lowest the frontier
         
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < top.length; i++) {
@@ -39,6 +39,18 @@ public class PlayerSkeleton {
 	        moveToMake[1] = r[1].intValue();
 	    }
 	    
+	    /*if (randomize(top) >= 0.2) {
+	        moveToMake[0] = (int) (Math.random() * State.getpOrients()[s.getNextPiece()]);
+	        int possibleMove = 0;
+	        for (int i = 0; i < legalMoves.length; i++) {
+	            if (legalMoves[i][0] == moveToMake[0]) {
+	                possibleMove++;
+	            }
+	        }
+	        moveToMake[1] = (int) (Math.random() * (possibleMove-1));
+	        //System.out.println("Making the random move: " + moveToMake[0] + "," + moveToMake[1]);
+	    }*/
+	    
 	    int[][] field = copy(s.getField());
         simulateField(s, field, moveToMake[0], moveToMake[1]);
         int completeLines = (int) getCompleteLines(field);
@@ -46,10 +58,19 @@ public class PlayerSkeleton {
         
 	    calculatePayoff(completeLines);
 	    
-	    reward -= 0.1;
-	    
 	    return moveToMake;
 	   
+	}
+	
+	public double randomize(int[] top) {
+	    double sum = 0;
+	    for (int i = 0; i < top.length; i++) {
+	        if (top[i] >= State.ROWS-3) return -1; //never randomize
+	        sum += top[i];
+	    }
+	    
+	    double normalizedSum = ((sum / State.ROWS-1) / State.COLS);
+	    return (Math.random() - normalizedSum) / 2;
 	}
 	
 	public void calculatePayoff(double payoff) {
@@ -79,7 +100,6 @@ public class PlayerSkeleton {
 	}
 	
 	public int[] bestMove(State s, int[][] legalMoves) {
-	    //System.out.println("==== Choosing Best Move for Piece " + s.getNextPiece() + " ====");
         double best = f(s, legalMoves[0]);
         int[] bestMove = legalMoves[0];
         for (int i = 1; i < legalMoves.length; i++) {
@@ -90,7 +110,7 @@ public class PlayerSkeleton {
                 bestMove = legalMoves[i];
             }
         }
-        //System.out.println("==== Best Move Found: " + bestMove[0] + "," + bestMove[1] + " ====");
+
         return bestMove;
 	}
 	
@@ -99,20 +119,24 @@ public class PlayerSkeleton {
 	    int[] top = simulateField(s, field, move[0], move[1]);
 	    
 	    //heuristics
-	    double aggregateHeight = getAggregateHeight(top); //average of all heights
+	    double landingHeight = getLandingHeight(top, s.getNextPiece(), move[0], move[1]);
 	    double completeLines = getCompleteLines(field); //number of lines completed
+	    double rowTransitions = getRowTransitions(field);
+	    double colTransitions = getColTransitions(field);
 	    double holes = getHoles(field, top); //number of holes present
-	    double bumpiness = getBumpiness(top); //sum of difference in height
+	    double wellSum = getWellSum(field);
 	    
-        double a = -0.510066;
-        double b = 0.760666;
-        double c = -0.35663;
-        double d = -0.184483;
+        double a = -4.500158825082766;
+        double b = 3.4181268101392694;
+        double c = -3.2178882868487753;
+        double d = -9.348695305445199;
+        double e = -7.899265427351652;
+        double g = -3.3855972247263626;
 	    
 	    //TODO make it a linear combination
-	    double f = a * aggregateHeight + b * completeLines + c * holes + d * bumpiness;
+	    double f = a * landingHeight + b * completeLines + c * rowTransitions + d * colTransitions + e * holes + g * wellSum;
 	    //System.out.println(move[0] + "," + move[1] + ": "
-	    //        + (a*aggregateHeight) + " + " + (b*completeLines) + " + " + (c*holes) + " + " + (d*bumpiness) + " = " + f);
+	    //        + landingHeight + " + " + completeLines + " + " + rowTransitions + " + " + colTransitions + " + " + holes + " + " + wellSum + " = " + f);
 	    return f;
 	}
 	
@@ -146,13 +170,89 @@ public class PlayerSkeleton {
 	    return top;
 	}
 	
-	public double getAggregateHeight(int[] top) {
-	    double sum = 0;
-	    for (int i = 0; i < top.length; i++) {
-	        if (top[i] >= State.ROWS) return 1000;
-	        sum += top[i];
+	public double getLandingHeight(int[] top, int nextPiece, int orient, int slot) {
+	    //get placement row
+	    int row = 0;
+	    int curCol = slot;
+	    int pieceWidth = State.getpWidth()[nextPiece][orient];
+	    while (pieceWidth-- > 0) {
+	        if (top[curCol] > row) {
+	            row = top[curCol];
+	        }
+	        curCol++;
 	    }
-	    return sum;
+	    
+	    //get landing height
+	    //double landingHeight = row + ((State.getpHeight()[nextPiece][orient] - 1) / 2.0);
+	    if (row >= State.ROWS) row = 1000;
+	    return row;
+	}
+	
+	public int getRowTransitions(int[][] field) {
+	    int transitions = 0;
+	    
+	    /*for (int i = 0; i < field.length; i++) {
+	        for (int j = 0; j < field[i].length-1; j++) {
+	            if (field[i][j] > 0 && field[i][j+1] == 0) {
+	                transitions++;
+	            } else if (field[i][j] == 0 && field[i][j+1] > 0) {
+	                transitions++;
+	            }
+	        }
+	    }*/
+	    
+	    for (int i = 0; i < field.length; i++) {
+	        int lastBit = 1;
+	        int bit = -1;
+	        for (int j = 0; j < field[i].length; j++) {
+	            if (field[i][j] > 0) bit = 1;
+	            else bit = 0;
+	            
+	            if (bit != lastBit) {
+	                transitions++;
+	            }
+	            lastBit = bit;
+	        }
+	        
+	        if (bit == 0) {
+	            transitions++;
+	        }
+	    }
+	    return transitions-2;
+	}
+	
+	public int getColTransitions(int[][] field) {
+	    int transitions = 0;
+	    
+	    /*for (int i = 0; i < field.length-1; i++) {
+            for (int j = 0; j < field[i].length; j++) {
+                if (field[i][j] > 0 && field[i+1][j] == 0) {
+                    transitions++;
+                } else if (field[i][j] == 0 && field[i+1][j] > 0) {
+                    transitions++;
+                }
+            }
+        }*/
+        
+        for (int i = 0; i < field[0].length; i++) {
+            int lastBit = 1;
+            int bit = -1;
+            for (int j = 0; j < field.length; j++) {
+                if (field[j][i] > 0) bit = 1;
+                else bit = 0;
+                
+                if (bit != lastBit) {
+                    transitions++;
+                }
+                lastBit = bit;
+            }
+            
+            if (bit == 0) {
+                transitions++;
+            }
+        }
+	    
+        return transitions-10;
 	}
 	
 	public double getCompleteLines(int[][] field) {
@@ -169,31 +269,70 @@ public class PlayerSkeleton {
         return sum;
 	}
 	
-	public double getHoles(int[][] field, int[] top) {
-	    int max = top[0];
-	    for (int i = 1; i < top.length; i++) {
-	        max = Math.max(max, top[i]);
-	    }
-	    if (max >= State.ROWS) max = State.ROWS-1;
-	    
-	    int sum = 0;
-	    //last row cannot have holes
-	    for (int i = 0; i < max-1; i++) {
-	        for (int j = 0; j < field[i].length; j++) {
-	            if (field[i][j] == 0 && i < top[j])
-	                sum++;
+	public int getHoles(int[][] field, int[] top) {
+	    int holes = 0;
+	    for (int i = 0; i < field[0].length; i++) {	        
+	        for (int j = 0; j < field.length; j++) {
+	            if (j >= top[i]) {
+	                break;
+	            }
+	            if (field[j][i] == 0) {
+	                holes++;
+	            }
 	        }
 	    }
-	    return sum;
+	    return holes;
 	}
 	
-	public double getBumpiness(int[] top) {
-	    double sum = 0;
-	    for (int i = 0; i < top.length-1; i++) {
-	        int bump = Math.abs(top[i] - top[i+1]);
-	        sum += bump;
+	public int getWellSum(int[][] field) {
+	    int wellSum = 0;
+	    //inner well
+	    for (int i = 1; i < field[0].length - 1; i++) {
+	        for (int j = field.length - 1; j >= 0; j--) {
+	            if ((field[j][i] == 0) && (field[j][i-1] != 0) && (field[j][i+1] != 0)) {
+	                wellSum++;
+	                
+	                for (int k = j - 1; k >= 0; k--) {
+	                    if (field[k][i] == 0) {
+	                        wellSum++;
+	                    } else {
+	                        break;
+	                    }
+	                }
+	            }
+	        }
 	    }
-	    return sum;
+	    
+	    //left well
+	    for (int j = field.length - 1; j >= 0; j--) {
+	        if ((field[j][0] == 0) && (field[j][1] != 0)) {
+                wellSum++;
+                
+                for (int k = j - 1; k >= 0; k--) {
+                    if (field[k][0] == 0) {
+                        wellSum++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+	    }
+	    
+	    //right well
+	    for (int j = field.length - 1; j >= 0; j--) {
+            if ((field[j][field[j].length-1] == 0) && (field[j][field[j].length-2] != 0)) {
+                wellSum++;
+                
+                for (int k = j - 1; k >= 0; k--) {
+                    if (field[k][field[k].length-1] == 0) {
+                        wellSum++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+	    return wellSum;
 	}
 	
     public int[][] copy(int[][] toCopy) {
@@ -235,8 +374,9 @@ public class PlayerSkeleton {
     }
 	
 	public static void main(String[] args) {
+	    while (true) {
 		State s = new State();
-		new TFrame(s);
+		TFrame t = new TFrame(s);
 		PlayerSkeleton p = new PlayerSkeleton();
 		while(!s.hasLost()) {
 			s.makeMove(p.pickMove(s,s.legalMoves()));
@@ -249,7 +389,9 @@ public class PlayerSkeleton {
 				e.printStackTrace();
 			}
 		}
+		t.dispose();
 		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
+	}
 	}
 	
 }
