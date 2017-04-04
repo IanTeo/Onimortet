@@ -1,4 +1,5 @@
 import java.awt.Color;
+import java.util.Random;
 
 
 
@@ -11,7 +12,7 @@ public class State {
 	
 
 	public boolean lost = false;
-	
+	public Random random;
 	
 	
 
@@ -160,8 +161,11 @@ public class State {
 	
 	//constructor
 	public State() {
+	    this(System.currentTimeMillis());
+	}
+	public State(long seed) {
+	    random = new Random(seed);
 		nextPiece = randomPiece();
-
 	}
 	
 	//random integer, returns 0-6

@@ -1,117 +1,33 @@
-import java.util.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 public class PlayerSkeleton {
+	
+    double a = -4.500158825082766; //landingHeight
+    double b = 3.4181268101392694; //completeLines
+    double c = -3.2178882868487753; //rowTransitions
+    double d = -9.348695305445199; //colTransitions
+    double e = -7.899265427351652; //holes
+    double g = -3.3855972247263626; //wellSum
     
-    //key is top[] values concat into a String with nextPiece as the last character
-    //value is the reward
-    HashMap<String, Double[]> rewardMap = new HashMap<String, Double[]>();
-    Stack<Tuple> backtrack = new Stack<Tuple>();
-    double reward = 0;
+    static AI ai;
 
 	//implement this function to have a working system
 	public int[] pickMove(State s, int[][] legalMoves) {
-	   int[] top = s.getTop();
-	        
-	    int max = top[0];
-	    for (int i = 1; i < top.length; i++) {
-	        max = Math.max(max, top[i]);
-	    }
+	    double bestEvaluation = f(s, legalMoves[0]);
+	    int[] bestMove = legalMoves[0];	    
 	    
-	    int front = max - 9; //find lowest the frontier
-        
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < top.length; i++) {
-            int next = top[i] - front;
-            if (next <= 0) next = 1;
-            sb.append(next-1); //ensure everything is 0-based
-        }
-        sb.append(s.getNextPiece());
-	        
-	    String key = sb.toString();
-	    Double[] r = rewardMap.get(key);
-	    int[] moveToMake;
-	    if (r == null) {
-	        moveToMake = bestMove(s, legalMoves);
-	        //System.out.println("Making the greedy move");
-	    } else {
-	        System.out.println("Making my optimal move");
-	        moveToMake = new int[2];
-	        moveToMake[0] = r[0].intValue();
-	        moveToMake[1] = r[1].intValue();
-	    }
-	    
-	    /*if (randomize(top) >= 0.2) {
-	        moveToMake[0] = (int) (Math.random() * State.getpOrients()[s.getNextPiece()]);
-	        int possibleMove = 0;
-	        for (int i = 0; i < legalMoves.length; i++) {
-	            if (legalMoves[i][0] == moveToMake[0]) {
-	                possibleMove++;
-	            }
-	        }
-	        moveToMake[1] = (int) (Math.random() * (possibleMove-1));
-	        //System.out.println("Making the random move: " + moveToMake[0] + "," + moveToMake[1]);
-	    }*/
-	    
-	    int[][] field = copy(s.getField());
-        simulateField(s, field, moveToMake[0], moveToMake[1]);
-        int completeLines = (int) getCompleteLines(field);
-        backtrack.push(new Tuple(key, moveToMake));
-        
-	    calculatePayoff(completeLines);
-	    
-	    return moveToMake;
-	   
-	}
-	
-	public double randomize(int[] top) {
-	    double sum = 0;
-	    for (int i = 0; i < top.length; i++) {
-	        if (top[i] >= State.ROWS-3) return -1; //never randomize
-	        sum += top[i];
-	    }
-	    
-	    double normalizedSum = ((sum / State.ROWS-1) / State.COLS);
-	    return (Math.random() - normalizedSum) / 2;
-	}
-	
-	public void calculatePayoff(double payoff) {
-	    if (payoff > 0) {
-	        //System.out.println("Payday!");
-	        while (!backtrack.isEmpty()) {
-    	        Tuple t = backtrack.pop();
-    	        Double[] r = rewardMap.get(t.key);
-                Double[] v = { (double) t.move[0], (double) t.move[1], payoff };
-    	        if (r == null) {
-    	            rewardMap.put(t.key, v);
-    	        } else {
-    	            //if current reward is smaller than new payoff
-    	            if (r[2] < payoff) {
-    	                rewardMap.put(t.key, v);
-    	            }
-    	            
-                    //reinforce that this is a good state
-                    if (r[0] == v[0] && r[1] ==  v[1]) {
-                        r[2] *= 1.1;
-                    }
-    	        }
-    	        //System.out.println(t.key + " got paid: " + payoff);
-    	        payoff *= 0.9; //reduce payoff as we backtrack
+	    for (int i = 1; i < legalMoves.length; i++) {
+	        double evaluation = f(s, legalMoves[i]);
+	        if (bestEvaluation < evaluation) {
+	            bestEvaluation = evaluation;
+	            bestMove = legalMoves[i];
 	        }
 	    }
-	}
-	
-	public int[] bestMove(State s, int[][] legalMoves) {
-        double best = f(s, legalMoves[0]);
-        int[] bestMove = legalMoves[0];
-        for (int i = 1; i < legalMoves.length; i++) {
-            double next = f(s, legalMoves[i]);
-            //we want to maximize f().
-            if (best < next) {
-                best = next;
-                bestMove = legalMoves[i];
-            }
-        }
-
-        return bestMove;
+	    //System.out.println("=== Best Move: " + bestMove[0] + "," + bestMove[1] + " ===");
+	    return bestMove;
 	}
 	
 	public double f(State s, int[] move) {
@@ -126,15 +42,8 @@ public class PlayerSkeleton {
 	    double holes = getHoles(field, top); //number of holes present
 	    double wellSum = getWellSum(field);
 	    
-        double a = -4.500158825082766;
-        double b = 3.4181268101392694;
-        double c = -3.2178882868487753;
-        double d = -9.348695305445199;
-        double e = -7.899265427351652;
-        double g = -3.3855972247263626;
-	    
 	    //TODO make it a linear combination
-	    double f = a * landingHeight + b * completeLines + c * rowTransitions + d * colTransitions + e * holes + g * wellSum;
+	    double f = a * landingHeight - b * completeLines + c * rowTransitions + d * colTransitions + e * holes + g * wellSum;
 	    //System.out.println(move[0] + "," + move[1] + ": "
 	    //        + landingHeight + " + " + completeLines + " + " + rowTransitions + " + " + colTransitions + " + " + holes + " + " + wellSum + " = " + f);
 	    return f;
@@ -355,7 +264,7 @@ public class PlayerSkeleton {
         return copy;
     }
     
-    public void print(int[][] toPrint) {
+    /*public void print(int[][] toPrint) {
         for (int i = 0; i < toPrint.length; i++) {
             for (int j = 0; j < toPrint[i].length; j++) {
                 if(toPrint[i][j] > 0) System.out.print("1 ");
@@ -371,37 +280,62 @@ public class PlayerSkeleton {
             System.out.print(toPrint[i] + " ");
         }
         System.out.println();
-    }
+    }*/
 	
 	public static void main(String[] args) {
-	    while (true) {
-		State s = new State();
-		TFrame t = new TFrame(s);
-		PlayerSkeleton p = new PlayerSkeleton();
-		while(!s.hasLost()) {
-			s.makeMove(p.pickMove(s,s.legalMoves()));
-			//s.makeMove(p.bestMove(s, s.legalMoves()));
-		    s.draw();
-			s.drawNext(0,0);
-			try {
-				Thread.sleep(0);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
+		File file = null;
+		FileWriter fw = null;
+		BufferedWriter bw = null;
+		try {
+			file = new  File("GAOut.txt");
+	        // if file doesnt exists, then create it
+	        if (!file.exists()) {
+	            file.createNewFile();
+	        }
+	        fw = new FileWriter(file.getAbsoluteFile(), true);
+	        bw = new BufferedWriter(fw);
+		} catch (IOException e) {
+	        e.printStackTrace();
+	    }
+        
+
+		ai = new AI();
+		int currentGen = -1;
+		long seed = 0;
+		while(true){
+		    if (currentGen != ai.generation) {
+		        seed = System.currentTimeMillis();
+		        currentGen = ai.generation;
+		        System.out.println("Generation " + currentGen + " seed:" + seed);
+		    }
+			State s = new State(seed);
+			//new TFrame(s);
+			PlayerSkeleton p = new PlayerSkeleton();
+			ai.setAIValues(p);
+			
+			while(!s.hasLost()) {
+				s.makeMove(p.pickMove(s,s.legalMoves()));
+				//if (s.getRowsCleared()!=0 && s.getRowsCleared() % 10000 == 0) System.out.println(s.getRowsCleared());
+				/*s.draw();
+				s.drawNext(0,0);
+				try {
+					Thread.sleep(0);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}*/
+			}
+			if(s.getRowsCleared()>0){
+		        String val = ai.sendScore(s.getRowsCleared()) + "\n";
+		        try {
+					bw.write(val);
+			        bw.flush();
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
 			}
 		}
-		t.dispose();
-		System.out.println("You have completed "+s.getRowsCleared()+" rows.");
-	}
 	}
 	
-}
-
-class Tuple {
-    protected String key;
-    protected int[] move;
-    
-    public Tuple (String key, int[] move) {
-        this.key = key;
-        this.move = move;
-    }
 }
