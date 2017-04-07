@@ -12,6 +12,9 @@ public class PlayerSkeleton {
     double e = -7.899265427351652; //holes
     double g = -3.3855972247263626; //wellSum
     
+    static long seed = 0;
+    static BufferedWriter bw = null;
+    
     static AI ai;
 
 	//implement this function to have a working system
@@ -285,7 +288,6 @@ public class PlayerSkeleton {
 	public static void main(String[] args) {
 		File file = null;
 		FileWriter fw = null;
-		BufferedWriter bw = null;
 		try {
 			file = new  File("GAOut.txt");
 	        // if file doesnt exists, then create it
@@ -300,42 +302,54 @@ public class PlayerSkeleton {
         
 
 		ai = new AI();
-		int currentGen = -1;
-		long seed = 0;
 		while(true){
-		    if (currentGen != ai.generation) {
-		        seed = System.currentTimeMillis();
-		        currentGen = ai.generation;
-		        System.out.println("Generation " + currentGen + " seed:" + seed);
-		    }
-			State s = new State(seed);
-			//new TFrame(s);
-			PlayerSkeleton p = new PlayerSkeleton();
-			ai.setAIValues(p);
-			
-			while(!s.hasLost()) {
-				s.makeMove(p.pickMove(s,s.legalMoves()));
-				//if (s.getRowsCleared()!=0 && s.getRowsCleared() % 10000 == 0) System.out.println(s.getRowsCleared());
-				/*s.draw();
-				s.drawNext(0,0);
-				try {
-					Thread.sleep(0);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}*/
-			}
-			if(s.getRowsCleared()>0){
-		        String val = ai.sendScore(s.getRowsCleared()) + "\n";
-		        try {
-					bw.write(val);
-			        bw.flush();
-				} catch (IOException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				
-			}
+            seed = System.currentTimeMillis();
+            System.out.println("Generation " + ai.generation + " seed:" + seed);
+		    ai.scores.stream().parallel().forEach(i -> runTetris(ai.scores.indexOf(i)));
+            /*for (int i = 0; i < 16; i++) {
+    			State s = new State(seed);
+    			//new TFrame(s);
+    			PlayerSkeleton p = new PlayerSkeleton();
+    			ai.setAIValues(p, i);
+    			
+    			while(!s.hasLost()) {
+    				s.makeMove(p.pickMove(s,s.legalMoves()));
+    			}
+    			if(s.getRowsCleared()>0){
+    		        String val = ai.sendScore(s.getRowsCleared(), i) + "\n";
+    		        try {
+    					bw.write(val);
+    			        bw.flush();
+    				} catch (IOException e) {
+    					// TODO Auto-generated catch block
+    					e.printStackTrace();
+    				}
+    				
+    			}
+		    }*/
 		}
+	}
+	
+	public static void runTetris(int i) {
+	    State s = new State(seed);
+        //new TFrame(s);
+        PlayerSkeleton p = new PlayerSkeleton();
+        ai.setAIValues(p, i);
+        
+        while(!s.hasLost()) {
+            s.makeMove(p.pickMove(s,s.legalMoves()));
+        }
+        if(s.getRowsCleared()>0){
+            String val = ai.sendScore(s.getRowsCleared(), i) + "\n";
+            try {
+                bw.write(val);
+                bw.flush();
+            } catch (IOException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+            
+        }
 	}
 	
 }

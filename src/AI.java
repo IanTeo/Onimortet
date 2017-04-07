@@ -21,13 +21,14 @@ public class AI {
     
     // A chromosome is just an array of 6 doubles.
     double[][] chromosomes = new double[population][6];
-    int[] scores = new int[population];
+    ArrayList<Integer> scores = new ArrayList<Integer>();
     int current = 0;
 
     public AI() {
 
         // Randomize starting chromosomes with values between -10 and 0.
         for (int i = 0; i < population; i++) {
+            scores.add(i);
             for (int j = 0; j < 6; j++) {
                 chromosomes[i][j] = Math.random() * 10 - 10;
             }
@@ -39,8 +40,8 @@ public class AI {
 
         // Calculate average fitness
         int[] scores_ = new int[population];
-        for (int i = 0; i < scores.length; i++) {
-            scores_[i] = scores[i];
+        for (int i = 0; i < scores.size(); i++) {
+            scores_[i] = scores.get(i);
         }
         Arrays.sort(scores_);
         System.out.println("Generation " + generation
@@ -54,8 +55,8 @@ public class AI {
         for (int i = 0; i < (population / 2); i++) {
 
             // Pick the more fit of the two pairs
-            int c1score = scores[i];
-            int c2score = scores[i + 1];
+            int c1score = scores.get(i);
+            int c2score = scores.get(i+1);
             int winner = c1score > c2score ? i : i + 1;
 
             // Keep the winner, discard the loser.
@@ -109,28 +110,28 @@ public class AI {
 
     }
 
-    void setAIValues(PlayerSkeleton ai) {
+    void setAIValues(PlayerSkeleton ai, int index) {
         if (!USE_GENETIC) {
             return;
         }
 
-        ai.a = chromosomes[current][0];
-        ai.b = chromosomes[current][1];
-        ai.c = chromosomes[current][2];
-        ai.d = chromosomes[current][3];
-        ai.e = chromosomes[current][4];
-        ai.g = chromosomes[current][5];
+        ai.a = chromosomes[index][0];
+        ai.b = chromosomes[index][1];
+        ai.c = chromosomes[index][2];
+        ai.d = chromosomes[index][3];
+        ai.e = chromosomes[index][4];
+        ai.g = chromosomes[index][5];
     }
 
-    String sendScore(int score) {
+    String sendScore(int score, int index) {
         if (!USE_GENETIC) {
             return "";
         }
 
-        String s = aToS(chromosomes[current]);
-        s = "Generation " + generation + "; Candidate " + (current + 1) + ": " + s + " Score = " + score;
+        String s = aToS(chromosomes[index]);
+        s = "Generation " + generation + "; Candidate " + (index + 1) + ": " + s + " Score = " + score;
         System.out.println(s);
-        scores[current] = score;
+        scores.set(index, score);
         current++;
 
         if (current == population) {
@@ -139,7 +140,7 @@ public class AI {
         return s;
     }
 
-    // Double array to string, two decimal places
+    // Double array to string
     private String aToS(double[] a) {
         String s = "";
         for (int i = 0; i < a.length; i++) {
