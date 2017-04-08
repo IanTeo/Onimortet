@@ -22,13 +22,12 @@ public class AI {
     // A chromosome is just an array of 6 doubles.
     double[][] chromosomes = new double[population][6];
     ArrayList<Integer> scores = new ArrayList<Integer>();
-    int current = 0;
 
     public AI() {
 
         // Randomize starting chromosomes with values between -10 and 0.
         for (int i = 0; i < population; i++) {
-            scores.add(i);
+            scores.add(0);
             for (int j = 0; j < 6; j++) {
                 chromosomes[i][j] = Math.random() * 10 - 10;
             }
@@ -106,7 +105,6 @@ public class AI {
         }
 
         generation++;
-        current = 0;
 
     }
 
@@ -132,11 +130,6 @@ public class AI {
         s = "Generation " + generation + "; Candidate " + (index + 1) + ": " + s + " Score = " + score;
         System.out.println(s);
         scores.set(index, score);
-        current++;
-
-        if (current == population) {
-            newGeneration();
-        }
         return s;
     }
 

@@ -306,6 +306,7 @@ public class PlayerSkeleton {
             seed = System.currentTimeMillis();
             System.out.println("Generation " + ai.generation + " seed:" + seed);
 		    ai.scores.stream().parallel().forEach(i -> runTetris(ai.scores.indexOf(i)));
+		    ai.newGeneration();
             /*for (int i = 0; i < 16; i++) {
     			State s = new State(seed);
     			//new TFrame(s);
