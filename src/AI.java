@@ -27,7 +27,7 @@ public class AI {
 
         // Randomize starting chromosomes with values between -10 and 0.
         for (int i = 0; i < population; i++) {
-            scores.add(0);
+            scores.add(i);
             for (int j = 0; j < 6; j++) {
                 chromosomes[i][j] = Math.random() * 10 - 10;
             }
