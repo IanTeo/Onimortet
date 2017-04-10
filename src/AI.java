@@ -20,27 +20,26 @@ public class AI {
     double mutation_rate = 0.05;
     
     // A chromosome is just an array of 6 doubles.
-    double[][] chromosomes = new double[population][6];
-    ArrayList<Integer> scores = new ArrayList<Integer>();
+    ArrayList<Gene> chromosomes = new ArrayList<Gene>();
 
     public AI() {
 
         // Randomize starting chromosomes with values between -10 and 0.
         for (int i = 0; i < population; i++) {
-            scores.add(i);
+            chromosomes.add(new Gene());
             for (int j = 0; j < 6; j++) {
-                chromosomes[i][j] = Math.random() * 10 - 10;
+                chromosomes.get(i).weights[j] = Math.random() * 10 - 10;
             }
         }
 
     }
 
     void newGeneration() {
-
+        Random r = new Random(System.currentTimeMillis());
         // Calculate average fitness
         int[] scores_ = new int[population];
-        for (int i = 0; i < scores.size(); i++) {
-            scores_[i] = scores.get(i);
+        for (int i = 0; i < chromosomes.size(); i++) {
+            scores_[i] = chromosomes.get(i).score;
         }
         Arrays.sort(scores_);
         System.out.println("Generation " + generation
@@ -51,25 +50,27 @@ public class AI {
         List<double[]> winners = new ArrayList<double[]>();
 
         // Pair 1 with 2, 3 with 4, etc.
-        for (int i = 0; i < (population / 2); i++) {
+        for (int i = 0; i < population; i += 2) {
 
             // Pick the more fit of the two pairs
-            int c1score = scores.get(i);
-            int c2score = scores.get(i+1);
+            int c1score = chromosomes.get(i).score;
+            int c2score = chromosomes.get(i+1).score;
             int winner = c1score > c2score ? i : i + 1;
 
             // Keep the winner, discard the loser.
-            winners.add(chromosomes[winner]);
+            winners.add(chromosomes.get(winner).weights);
         }
 
 
-        int counter = 0;
         List<double[]> new_population = new ArrayList<double[]>();
 
         // Pair up two winners at a time
         for (int i = 0; i < winners.size(); i += 2) {
             double[] winner1 = winners.get(i);
             double[] winner2 = winners.get(i + 1);
+            
+            System.out.println(winner1[0] + "," + winner1[1] + "," + winner1[2] + "," + winner1[3] + "," + winner1[4] + "," + winner1[5]);
+            System.out.println(winner2[0] + "," + winner2[1] + "," + winner2[2] + "," + winner2[3] + "," + winner2[4] + "," + winner2[5]);;
 
             // Generate four new offspring
             for (int off = 0; off < 4; off++) {
@@ -78,19 +79,20 @@ public class AI {
 
                 // Pick at random a mixed subset of the two winners and make it the new chromosome
                 for (int j = 0; j < 6; j++) {
-                    child[j] = (Math.random()*2) > 1 ? winner1[j] : winner2[j];
+                    int gen = r.nextInt(2);
+                    System.out.print(gen + ",");
+                    child[j] = gen == 1 ? winner1[j] : winner2[j];
 
                     // Chance of mutation
-                    boolean mutate = Math.random() < mutation_rate;
+                    boolean mutate = r.nextDouble() < mutation_rate;
                     if (mutate) {
                         // Change this value anywhere from -10 to 10
-                        double change = Math.random() * 20 - 10;
+                        double change = r.nextDouble() * 20 - 10;
                         child[j] += change;
                     }
                 }
-
+                System.out.println(child[0] + "-" + child[1] + "-" + child[2] + "-" + child[3] + "-" + child[4] + "-" + child[5]);
                 new_population.add(child);
-                counter++;
             }
         }
 
@@ -100,7 +102,7 @@ public class AI {
         // Copy them over
         for (int i = 0; i < population; i++) {
             for (int j = 0; j < 6; j++) {
-                chromosomes[i][j] = new_population.get(i)[j];
+                chromosomes.get(i).weights[j] = new_population.get(i)[j];
             }
         }
 
@@ -113,12 +115,12 @@ public class AI {
             return;
         }
 
-        ai.a = chromosomes[index][0];
-        ai.b = chromosomes[index][1];
-        ai.c = chromosomes[index][2];
-        ai.d = chromosomes[index][3];
-        ai.e = chromosomes[index][4];
-        ai.g = chromosomes[index][5];
+        ai.a = chromosomes.get(index).weights[0];
+        ai.b = chromosomes.get(index).weights[1];
+        ai.c = chromosomes.get(index).weights[2];
+        ai.d = chromosomes.get(index).weights[3];
+        ai.e = chromosomes.get(index).weights[4];
+        ai.g = chromosomes.get(index).weights[5];
     }
 
     String sendScore(int score, int index) {
@@ -126,10 +128,10 @@ public class AI {
             return "";
         }
 
-        String s = aToS(chromosomes[index]);
+        String s = aToS(chromosomes.get(index).weights);
         s = "Generation " + generation + "; Candidate " + (index + 1) + ": " + s + " Score = " + score;
         System.out.println(s);
-        scores.set(index, score);
+        chromosomes.get(index).score = score;
         return s;
     }
 
@@ -143,5 +145,15 @@ public class AI {
             }
         }
         return "[" + s + "]";
+    }
+}
+
+class Gene {
+    double[] weights;
+    int score;
+    
+    public Gene() {
+        weights = new double[6];
+        score = 0;
     }
 }
