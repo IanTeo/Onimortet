@@ -2,6 +2,9 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 public class PlayerSkeleton {
 	
@@ -305,7 +308,22 @@ public class PlayerSkeleton {
 		while(true){
             seed = System.currentTimeMillis();
             System.out.println("Generation " + ai.generation + " seed:" + seed);
-            ai.chromosomes.stream().parallel().forEach(i -> runTetris(ai.chromosomes.indexOf(i)));
+            ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newCachedThreadPool();
+            for (int i = 0; i < ai.population; i++) {
+                int index = i;
+                executor.execute(new Runnable() {
+                    @Override
+                    public void run() {
+                        runTetris(index);
+                    }
+                });
+            }
+            executor.shutdown();
+            try {
+                executor.awaitTermination(Long.MAX_VALUE, TimeUnit.SECONDS);
+            } catch (Exception e) {
+                System.out.println("Error while waiting on thread");
+            }
 		    ai.newGeneration();
             /*for (int i = 0; i < 16; i++) {
     			State s = new State(seed);
