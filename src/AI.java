@@ -69,8 +69,8 @@ public class AI {
             double[] winner1 = winners.get(i);
             double[] winner2 = winners.get(i + 1);
             
-            System.out.println(winner1[0] + "," + winner1[1] + "," + winner1[2] + "," + winner1[3] + "," + winner1[4] + "," + winner1[5]);
-            System.out.println(winner2[0] + "," + winner2[1] + "," + winner2[2] + "," + winner2[3] + "," + winner2[4] + "," + winner2[5]);;
+            //System.out.println(winner1[0] + "," + winner1[1] + "," + winner1[2] + "," + winner1[3] + "," + winner1[4] + "," + winner1[5]);
+            //System.out.println(winner2[0] + "," + winner2[1] + "," + winner2[2] + "," + winner2[3] + "," + winner2[4] + "," + winner2[5]);;
 
             // Generate four new offspring
             for (int off = 0; off < 4; off++) {
@@ -80,7 +80,7 @@ public class AI {
                 // Pick at random a mixed subset of the two winners and make it the new chromosome
                 for (int j = 0; j < 6; j++) {
                     int gen = r.nextInt(2);
-                    System.out.print(gen + ",");
+                    //System.out.print(gen + ",");
                     child[j] = gen == 1 ? winner1[j] : winner2[j];
 
                     // Chance of mutation
@@ -91,7 +91,7 @@ public class AI {
                         child[j] += change;
                     }
                 }
-                System.out.println(child[0] + "-" + child[1] + "-" + child[2] + "-" + child[3] + "-" + child[4] + "-" + child[5]);
+                //System.out.println(child[0] + "-" + child[1] + "-" + child[2] + "-" + child[3] + "-" + child[4] + "-" + child[5]);
                 new_population.add(child);
             }
         }
