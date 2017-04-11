@@ -49,7 +49,7 @@ public class AI {
 
         List<double[]> winners = new ArrayList<double[]>();
 
-        // Pair 1 with 2, 3 with 4, etc.
+/*        // Pair 1 with 2, 3 with 4, etc.
         for (int i = 0; i < population; i += 2) {
 
             // Pick the more fit of the two pairs
@@ -59,9 +59,19 @@ public class AI {
 
             // Keep the winner, discard the loser.
             winners.add(chromosomes.get(winner).weights);
+        }*/
+        
+        //pick the best 8 scores instead
+
+        for (int j = population-1; j >= population/2; j--) { //start from the highest score, stops at half size of pop size
+        	for (int i = 0; i < population; i++) {
+	        	if(chromosomes.get(i).score == scores_[j]){
+	        		winners.add(chromosomes.get(i).weights);
+	        		System.out.println("Score taken: " + chromosomes.get(i).score);
+	        	}
+	        }
         }
-
-
+        
         List<double[]> new_population = new ArrayList<double[]>();
 
         // Pair up two winners at a time

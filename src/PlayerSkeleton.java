@@ -340,7 +340,7 @@ public class PlayerSkeleton {
         while(!s.hasLost()) {
             s.makeMove(p.pickMove(s,s.legalMoves()));
         }
-        if(s.getRowsCleared()>0){
+        //if(s.getRowsCleared()>0){
             String val = ai.sendScore(s.getRowsCleared(), i) + "\n";
             try {
                 bw.write(val);
@@ -350,7 +350,7 @@ public class PlayerSkeleton {
                 e.printStackTrace();
             }
             
-        }
+        //}
 	}
 	
 }
