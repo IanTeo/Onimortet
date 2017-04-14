@@ -15,10 +15,12 @@ public class PlayerSkeleton {
     double g = -10.117947734955948; //wellSum
     
     
+    /* Variables required for GA
     static long seed = 0;
     static BufferedWriter bw = null;
     
     static AI ai;
+    */
 
 	//implement this function to have a working system
 	public int[] pickMove(State s, int[][] legalMoves) {
