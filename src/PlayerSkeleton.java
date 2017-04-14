@@ -2,15 +2,18 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Random;
 
 public class PlayerSkeleton {
-	
-    double a = -4.500158825082766; //landingHeight
-    double b = 3.4181268101392694; //completeLines
-    double c = -3.2178882868487753; //rowTransitions
-    double d = -9.348695305445199; //colTransitions
-    double e = -7.899265427351652; //holes
-    double g = -3.3855972247263626; //wellSum
+    
+    //weights
+    double a = -9.665744834427922; //landingHeight
+    double b = 19.817566268489543; //completeLines
+    double c = -5.992424473345767; //rowTransitions
+    double d = -21.322795310814993; //colTransitions
+    double e = -28.252131468783272; //holes
+    double g = -10.117947734955948; //wellSum
+    
     
     static long seed = 0;
     static BufferedWriter bw = null;
@@ -46,7 +49,7 @@ public class PlayerSkeleton {
 	    double wellSum = getWellSum(field);
 	    
 	    //TODO make it a linear combination
-	    double f = a * landingHeight - b * completeLines + c * rowTransitions + d * colTransitions + e * holes + g * wellSum;
+	    double f = a * landingHeight + b * completeLines + c * rowTransitions + d * colTransitions + e * holes + g * wellSum;
 	    //System.out.println(move[0] + "," + move[1] + ": "
 	    //        + landingHeight + " + " + completeLines + " + " + rowTransitions + " + " + colTransitions + " + " + holes + " + " + wellSum + " = " + f);
 	    return f;
@@ -266,26 +269,30 @@ public class PlayerSkeleton {
         }
         return copy;
     }
-    
-    /*public void print(int[][] toPrint) {
-        for (int i = 0; i < toPrint.length; i++) {
-            for (int j = 0; j < toPrint[i].length; j++) {
-                if(toPrint[i][j] > 0) System.out.print("1 ");
-                else System.out.print("0 ");
-            }
-            System.out.println();
-        }
-        System.out.println("========================");
-    }
-    
-    public void print(int[] toPrint) {
-        for (int i = 0; i < toPrint.length; i++) {
-            System.out.print(toPrint[i] + " ");
-        }
-        System.out.println();
-    }*/
 	
-	public static void main(String[] args) {
+    //Original
+    public static void main(String[] args) {
+        while (true) {
+        State s = new State();
+        new TFrame(s);
+        PlayerSkeleton p = new PlayerSkeleton();
+        while(!s.hasLost()) {
+            s.makeMove(p.pickMove(s,s.legalMoves()));
+            s.draw();
+            s.drawNext(0,0);
+            try {
+                Thread.sleep(300);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        System.out.println("You have completed "+s.getRowsCleared()+" rows.");
+        }
+    }
+
+    /* Codes for Genetic Algorithm
+     * Need to add a seed to State constructor 
+	public static void main(String[] args) throws Exception {
 		File file = null;
 		FileWriter fw = null;
 		try {
@@ -303,54 +310,200 @@ public class PlayerSkeleton {
 
 		ai = new AI();
 		while(true){
+		    //seed the ai with 5 random long values for each generation
+		    //can increase this value to make GA run more games
             seed = System.currentTimeMillis();
+            long[] seeds = new long[5];
+            Random r = new Random(seed);
+            for (int i = 0; i < seeds.length; i++) {
+                seeds[i] = r.nextLong();
+            }
             System.out.println("Generation " + ai.generation + " seed:" + seed);
-            ai.chromosomes.stream().parallel().forEach(i -> runTetris(ai.chromosomes.indexOf(i)));
-		    ai.newGeneration();
-            /*for (int i = 0; i < 16; i++) {
-    			State s = new State(seed);
-    			//new TFrame(s);
-    			PlayerSkeleton p = new PlayerSkeleton();
-    			ai.setAIValues(p, i);
-    			
-    			while(!s.hasLost()) {
-    				s.makeMove(p.pickMove(s,s.legalMoves()));
-    			}
-    			if(s.getRowsCleared()>0){
-    		        String val = ai.sendScore(s.getRowsCleared(), i) + "\n";
-    		        try {
-    					bw.write(val);
-    			        bw.flush();
-    				} catch (IOException e) {
-    					// TODO Auto-generated catch block
-    					e.printStackTrace();
-    				}
-    				
-    			}
-		    }*/
+           
+            //run each chromosome in parallel
+            ai.chromosomes.stream()
+                .parallel()
+                .forEach(i -> runTetris(ai.chromosomes.indexOf(i), seeds));
+                
+            //once all chromosomes have finished running, declare a new generation
+            ai.newGeneration();
 		}
 	}
 	
-	public static void runTetris(int i) {
-	    State s = new State(seed);
-        //new TFrame(s);
-        PlayerSkeleton p = new PlayerSkeleton();
-        ai.setAIValues(p, i);
-        
-        while(!s.hasLost()) {
-            s.makeMove(p.pickMove(s,s.legalMoves()));
-        }
-        if(s.getRowsCleared()>0){
-            String val = ai.sendScore(s.getRowsCleared(), i) + "\n";
-            try {
-                bw.write(val);
-                bw.flush();
-            } catch (IOException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+	//method to run headless
+	public static void runTetris(int i, long[] seeds) {
+	    int total = 0;
+	    for (int j = 0; j < seeds.length; j++) {
+    	    State s = new State(seeds[j]);
+            PlayerSkeleton p = new PlayerSkeleton();
+            ai.setAIValues(p, i);
             
+            while(!s.hasLost()) {
+                s.makeMove(p.pickMove(s,s.legalMoves()));
+            }
+            if(s.getRowsCleared()>0){
+                total += s.getRowsCleared();
+            }
+	    }
+        String val = ai.sendScore(total, i) + "\n";
+        try {
+            bw.write(val);
+            bw.flush();
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
         }
-	}
+	}*/
 	
 }
+
+/*//Classes for Genetic Algorithm
+public class AI {
+    // If false, just use the default values
+    final boolean USE_GENETIC = true;
+    
+    // Start from generation 1
+    int generation = 1;
+    
+    // How many candidates are there in a generation?
+    // Must be a multiple of 4.
+    final int population = 16;
+    
+    // Chromosomes mutatation rate
+    double mutation_rate = 0.05;
+    
+    // A chromosome is just an array of 6 doubles.
+    ArrayList<Gene> chromosomes = new ArrayList<Gene>();
+
+    public AI() {
+
+        // Randomize starting chromosomes with values between -10 and 0.
+        for (int i = 0; i < population; i++) {
+            chromosomes.add(new Gene());
+            for (int j = 0; j < 6; j++) {
+                chromosomes.get(i).weights[j] = Math.random() * 10 - 10;
+            }
+        }
+
+    }
+
+    void newGeneration() {
+        Random r = new Random(System.currentTimeMillis());
+        // Calculate average fitness
+        int[] scores_ = new int[population];
+        for (int i = 0; i < chromosomes.size(); i++) {
+            scores_[i] = chromosomes.get(i).score;
+        }
+        Arrays.sort(scores_);
+        System.out.println("Generation " + generation
+                + "; min = " + scores_[0]
+                + "; med = " + scores_[population / 2]
+                + "; max = " + scores_[population - 1]);
+
+        List<double[]> winners = new ArrayList<double[]>();
+
+        // Pair 1 with 2, 3 with 4, etc.
+        for (int i = 0; i < population; i += 2) {
+
+            // Pick the more fit of the two pairs
+            int c1score = chromosomes.get(i).score;
+            int c2score = chromosomes.get(i+1).score;
+            int winner = c1score > c2score ? i : i + 1;
+
+            // Keep the winner, discard the loser.
+            winners.add(chromosomes.get(winner).weights);
+        }
+
+
+        List<double[]> new_population = new ArrayList<double[]>();
+
+        // Pair up two winners at a time
+        for (int i = 0; i < winners.size(); i += 2) {
+            double[] winner1 = winners.get(i);
+            double[] winner2 = winners.get(i + 1);
+            
+            // Generate four new offspring
+            for (int off = 0; off < 4; off++) {
+
+                double[] child = new double[6];
+
+                // Pick at random a mixed subset of the two winners and make it the new chromosome
+                for (int j = 0; j < 6; j++) {
+                    int gen = r.nextInt(2);
+                    //System.out.print(gen + ",");
+                    child[j] = gen == 1 ? winner1[j] : winner2[j];
+
+                    // Chance of mutation
+                    boolean mutate = r.nextDouble() < mutation_rate;
+                    if (mutate) {
+                        // Change this value anywhere from -10 to 10
+                        double change = r.nextDouble() * 20 - 10;
+                        child[j] += change;
+                    }
+                }
+                new_population.add(child);
+            }
+        }
+
+        // Shuffle the new population.
+        Collections.shuffle(new_population, new Random());
+
+        // Copy them over
+        for (int i = 0; i < population; i++) {
+            for (int j = 0; j < 6; j++) {
+                chromosomes.get(i).weights[j] = new_population.get(i)[j];
+            }
+        }
+
+        System.out.println("Population size: " + chromosomes.size());
+        generation++;
+
+    }
+
+    void setAIValues(PlayerSkeleton ai, int index) {
+        if (!USE_GENETIC) {
+            return;
+        }
+
+        ai.a = chromosomes.get(index).weights[0];
+        ai.b = chromosomes.get(index).weights[1];
+        ai.c = chromosomes.get(index).weights[2];
+        ai.d = chromosomes.get(index).weights[3];
+        ai.e = chromosomes.get(index).weights[4];
+        ai.g = chromosomes.get(index).weights[5];
+    }
+
+    String sendScore(int score, int index) {
+        if (!USE_GENETIC) {
+            return "";
+        }
+
+        String s = aToS(chromosomes.get(index).weights);
+        s = "Generation " + generation + "; Candidate " + (index + 1) + ": " + s + " Score = " + score;
+        System.out.println(s);
+        chromosomes.get(index).score = score;
+        return s;
+    }
+
+    // Double array to string
+    private String aToS(double[] a) {
+        String s = "";
+        for (int i = 0; i < a.length; i++) {
+            s += Double.toString(a[i]);
+            if (i != a.length - 1) {
+                s += ", ";
+            }
+        }
+        return "[" + s + "]";
+    }
+}
+
+class Gene {
+    double[] weights;
+    int score;
+    
+    public Gene() {
+        weights = new double[6];
+        score = 0;
+    }
+}*/
