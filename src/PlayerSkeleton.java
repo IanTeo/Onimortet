@@ -50,10 +50,7 @@ public class PlayerSkeleton {
 	    double holes = getHoles(field, top); //number of holes present
 	    double wellSum = getWellSum(field);
 	    
-	    //TODO make it a linear combination
 	    double f = a * landingHeight + b * completeLines + c * rowTransitions + d * colTransitions + e * holes + g * wellSum;
-	    //System.out.println(move[0] + "," + move[1] + ": "
-	    //        + landingHeight + " + " + completeLines + " + " + rowTransitions + " + " + colTransitions + " + " + holes + " + " + wellSum + " = " + f);
 	    return f;
 	}
 	
@@ -87,6 +84,7 @@ public class PlayerSkeleton {
 	    return top;
 	}
 	
+	//The height that the piece will land at
 	public double getLandingHeight(int[] top, int nextPiece, int orient, int slot) {
 	    //get placement row
 	    int row = 0;
@@ -99,24 +97,13 @@ public class PlayerSkeleton {
 	        curCol++;
 	    }
 	    
-	    //get landing height
-	    //double landingHeight = row + ((State.getpHeight()[nextPiece][orient] - 1) / 2.0);
 	    if (row >= State.ROWS) row = 1000;
 	    return row;
 	}
 	
+	//The number of empty cells that are adjacent to a filled cell in the same row
 	public int getRowTransitions(int[][] field) {
 	    int transitions = 0;
-	    
-	    /*for (int i = 0; i < field.length; i++) {
-	        for (int j = 0; j < field[i].length-1; j++) {
-	            if (field[i][j] > 0 && field[i][j+1] == 0) {
-	                transitions++;
-	            } else if (field[i][j] == 0 && field[i][j+1] > 0) {
-	                transitions++;
-	            }
-	        }
-	    }*/
 	    
 	    for (int i = 0; i < field.length; i++) {
 	        int lastBit = 1;
@@ -138,18 +125,9 @@ public class PlayerSkeleton {
 	    return transitions-2;
 	}
 	
+	// The number of empty cells that are adjacent to a filled cell in the same column
 	public int getColTransitions(int[][] field) {
 	    int transitions = 0;
-	    
-	    /*for (int i = 0; i < field.length-1; i++) {
-            for (int j = 0; j < field[i].length; j++) {
-                if (field[i][j] > 0 && field[i+1][j] == 0) {
-                    transitions++;
-                } else if (field[i][j] == 0 && field[i+1][j] > 0) {
-                    transitions++;
-                }
-            }
-        }*/
         
         for (int i = 0; i < field[0].length; i++) {
             int lastBit = 1;
@@ -172,6 +150,7 @@ public class PlayerSkeleton {
         return transitions-10;
 	}
 	
+	// The number of lines cleared
 	public double getCompleteLines(int[][] field) {
 	    int sum = 0;
         for (int i = 0; i < field.length; i++) {
@@ -186,6 +165,7 @@ public class PlayerSkeleton {
         return sum;
 	}
 	
+	//The number of holes (considered a hole if a filled cell is on top os an empty cell)
 	public int getHoles(int[][] field, int[] top) {
 	    int holes = 0;
 	    for (int i = 0; i < field[0].length; i++) {	        
@@ -201,6 +181,7 @@ public class PlayerSkeleton {
 	    return holes;
 	}
 	
+	//Measures how deep an area with empty cells is
 	public int getWellSum(int[][] field) {
 	    int wellSum = 0;
 	    //inner well
